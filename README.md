@@ -1,8 +1,3 @@
-Ce fichier est structuré pour aider un client ou recruteur à comprendre **le but du site**, **son fonctionnement**, **les technologies utilisées**, et **l’approche du développeur**.
-
----
-
-````markdown
 # 💼 Portfolio de Sarobidy - Développeur Web Front-End
 
 Bienvenue sur mon portfolio en ligne !  
