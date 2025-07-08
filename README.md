@@ -108,10 +108,3 @@ Ce projet est open-source. Vous pouvez l’utiliser comme modèle, vous en inspi
 
 > ✨ *“Un bon design attire, un bon code retient.”*
 > Merci d’avoir visité mon portfolio !
-
-```
-
----
-
-Souhaites-tu que je t’aide à **ajouter un CV téléchargeable** dans ce portfolio ? Ou une **section de témoignages** pour renforcer la crédibilité ?
-```
