@@ -658,14 +658,123 @@
     color: var(--primary);
   }
 
-  /* Responsive additions */
-  @media (max-width: 768px) {
-    .projects-grid {
-      grid-template-columns: 1fr;
-    }
+  /* Style amélioré pour le bouton "Voir tous mes projets" */
+  .button-center-left {
+    display: flex;
+    justify-content: center;
+    margin-top: 40px;
+    padding-top: 30px;
+    border-top: 1px solid #eaeaea;
+    position: relative;
+  }
 
-    .contact-form {
-      padding: 0 15px;
+  .button-center-left::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #eaeaea, transparent);
+  }
+
+  .btn-all-projects {
+    background: linear-gradient(135deg, var(--primary), #0d7cbb);
+    color: white;
+    padding: 14px 35px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: 600;
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 6px 20px rgba(20, 157, 221, 0.25);
+    border: 2px solid transparent;
+    position: relative;
+    overflow: hidden;
+    z-index: 1;
+    transform: translateX(-15px); /* Décalage vers la gauche */
+  }
+
+  .btn-all-projects::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, #0d7cbb, var(--primary));
+    z-index: -1;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .btn-all-projects:hover {
+    color: white;
+    border-color: transparent;
+    transform: translateX(-15px) translateY(-5px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(20, 157, 221, 0.4);
+  }
+
+  .btn-all-projects:hover::before {
+    opacity: 1;
+  }
+
+  .btn-all-projects i {
+    font-size: 1em;
+    transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  .btn-all-projects:hover i {
+    transform: translateX(8px) rotate(-10deg);
+  }
+
+  .btn-all-projects::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    opacity: 0;
+    border-radius: 100%;
+    transform: scale(1, 1) translate(-50%);
+    transform-origin: 50% 50%;
+  }
+
+  .btn-all-projects:hover::after {
+    animation: ripple 1s ease-out;
+  }
+
+  @keyframes ripple {
+    0% {
+      transform: scale(0, 0);
+      opacity: 0.5;
+    }
+    100% {
+      transform: scale(50, 50);
+      opacity: 0;
+    }
+  }
+
+  /* Pour les écrans mobiles */
+  @media (max-width: 768px) {
+    .button-center-left {
+      justify-content: center;
+      margin-top: 30px;
+      padding-top: 25px;
+    }
+    
+    .btn-all-projects {
+      transform: translateX(0); /* Pas de décalage sur mobile */
+      padding: 12px 25px;
+      font-size: 0.95rem;
+    }
+    
+    .btn-all-projects:hover {
+      transform: translateX(0) translateY(-5px) scale(1.03);
     }
   }
   </style>
@@ -681,7 +790,7 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="profile">
-      <img src="Sary.PNG" alt="Profile" class="profile-img">
+      <img src="./img/Sary.PNG" alt="Profile" class="profile-img">
       <h2>ANDRIANIRIANA FANOMEZANTSOA</h2>
       <p>Développeur Web</p>
     </div>
@@ -717,7 +826,7 @@
       <h2 class="section-title">À Propos</h2>
       <div class="about-content">
         <div class="about-img">
-          <img src="DSCN0678.JPG" alt="Profile">
+          <img src="./img/DSCN0678.JPG" alt="Profile">
         </div>
         <div class="about-info">
           <h3>Développeur Web & Ingénieur Informatique</h3>
@@ -749,7 +858,7 @@
               <i class="fas fa-phone"></i>
               <div>
                 <strong>Téléphone:</strong>
-                <p>034 43 206 61</p>
+                <p>034 43 206 61 / 032 64 689 80</p>
               </div>
             </div>
             <div class="info-item">
@@ -980,23 +1089,26 @@
           <div class="timeline-content">
             <h3>2020 - 2024</h3>
             <h4>Licence en Génie Informatique</h4>
-            <p>Institut Supérieur de Technologie ISSTM, Mahajanga</p>
+            <p>Institut Supérieur des Sciences et Technologie ISSTM Mahajanga</p>
           </div>
         </div>
         <div class="timeline-item">
           <div class="timeline-icon"><i class="fas fa-school"></i></div>
           <div class="timeline-content">
             <h3>2018 - 2020</h3>
-            <h4>Baccalauréat Scientifique</h4>
-            <p>Lycée Moderne Mahajanga</p>
+            <h4>Baccalauréat Litteraire Serie A2</h4>
+            <p>Lycée FJKM Mangarivotra Mahajanga</p>
           </div>
         </div>
         <div class="timeline-item">
           <div class="timeline-icon"><i class="fas fa-briefcase"></i></div>
           <div class="timeline-content">
             <h3>Stage 2023</h3>
+            <h4>Stage Informatique & Réseau</h4>
+            <p>Entreprise REFRIGEPECHE OUEST — Application WEB & gestion de bases de données</p><br></br>
+            <h3>Stage 2025</h3>
             <h4>Stage Développeur Web</h4>
-            <p>Entreprise Tempus Donum — Front-end & gestion de bases de données</p>
+            <p>Entreprise RESIDENCE HUTAMAC — Application WEB&Mobile et Manpulations des Bases de Donnée</p>
           </div>
         </div>
       </div>
@@ -1005,7 +1117,7 @@
     <section id="portfolio" class="section">
       <h2 class="section-title">Projets</h2>
       <div class="projects-grid">
-
+        <!-- Projet 1 -->
         <div class="project-item">
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTUUD5CVdayUQtX1C4jfyJMjuQuKMwXr_PAYw&s" alt="Recettes malgaches">
           <div class="project-content">
@@ -1015,6 +1127,7 @@
           </div>
         </div>
 
+        <!-- Projet 2 -->
         <div class="project-item">
           <img src="https://www.dragnsurvey.com/blog/wp-content/uploads/2024/02/quiz-line-computer.jpg" alt="Quiz Programmation">
           <div class="project-content">
@@ -1024,6 +1137,7 @@
           </div>
         </div>
 
+        <!-- Projet 3 -->
         <div class="project-item">
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRlpdFMS27VUVWejxs5be71FR8MlcBsmGINVuQJfZQZz2aSwrraW5CT7GKerGwL-V8wl7g&usqp=CAU" alt="Site Portfolio">
           <div class="project-content">
@@ -1033,6 +1147,7 @@
           </div>
         </div>
 
+        <!-- Projet 4 -->
         <div class="project-item">
           <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQajNKP5eX53ZD4V4QuSNGfNQTN7YEvXKphlQ&s" alt="Site Portfolio">
           <div class="project-content">
@@ -1041,7 +1156,14 @@
             <a href="https://text-to-voice-aloud.lovable.app/" class="btn">Voir le projet</a>
           </div>
         </div>
+      </div>
 
+      <!-- Bouton Voir tous mes projets EN DEHORS de la grille -->
+      <div class="button-center-left">
+        <a href="./Projets.html" class="btn-all-projects">
+          <span>Voir tous mes projets</span>
+          <i class="fas fa-arrow-right"></i>
+        </a>
       </div>
     </section>
 
@@ -1121,7 +1243,7 @@
       
       // Animation du texte typé
       const typedText = document.querySelector('.typed-text');
-      const professions = ['Développeur Web', 'Ingénieur Informatique', 'Spécialiste Python'];
+      const professions = ['Développeur Web', 'Ingénieur Informatique Junior', 'Spécialiste en création des Site WEB'];
       let currentProfession = 0;
       let charIndex = 0;
       let isDeleting = false;
