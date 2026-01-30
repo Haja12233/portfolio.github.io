@@ -6,6 +6,7 @@
     <title>Mes Projets - Galerie avec Images</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* Tous les styles CSS restent exactement les mêmes */
         * {
             margin: 0;
             padding: 0;
@@ -838,6 +839,52 @@
                 padding: 20px;
             }
         }
+
+        /* Backup/restore buttons */
+        .backup-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .btn-backup {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-backup:hover {
+            background: rgba(16, 185, 129, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-restore {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            padding: 10px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-restore:hover {
+            background: rgba(59, 130, 246, 0.3);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -853,7 +900,7 @@
                 </div>
                 <div>
                     <h1>Mes Projets</h1>
-                    <p class="tagline">Galerie avec images - Téléchargez et visualisez vos projets</p>
+                    <p class="tagline">Galerie avec images - Sauvegarde automatique dans votre navigateur</p>
                 </div>
             </div>
         </header>
@@ -868,6 +915,17 @@
             </div>
             <div class="search-filter">
                 <input type="text" id="search-input" class="form-input" placeholder="Rechercher un projet...">
+            </div>
+            <div class="backup-controls">
+                <button class="btn-backup" id="export-btn">
+                    <i class="fas fa-download"></i> Exporter les projets
+                </button>
+                <button class="btn-restore" id="import-btn">
+                    <i class="fas fa-upload"></i> Importer des projets
+                </button>
+                <button class="btn-restore" id="clear-btn" style="background: rgba(239, 68, 68, 0.2); color: var(--danger); border-color: rgba(239, 68, 68, 0.3);">
+                    <i class="fas fa-trash"></i> Tout effacer
+                </button>
             </div>
         </section>
 
@@ -884,12 +942,18 @@
                     <i class="fas fa-folder-open"></i>
                     <h3>Aucun projet pour le moment</h3>
                     <p>Commencez par ajouter votre premier projet avec une image !</p>
+                    <p style="margin-top: 10px; font-size: 0.9rem; color: var(--primary);">
+                        <i class="fas fa-info-circle"></i> Vos projets sont automatiquement sauvegardés dans votre navigateur
+                    </p>
                 </div>
             </div>
         </section>
 
         <footer>
-            <p>© 2023 Mes Projets - Tous droits réservés | Galerie avec upload d'images</p>
+            <p>© 2023 Mes Projets - Tous droits réservés | Galerie avec sauvegarde automatique</p>
+            <p style="margin-top: 5px; font-size: 0.8rem; color: var(--gray);">
+                <i class="fas fa-database"></i> Données sauvegardées localement dans votre navigateur
+            </p>
         </footer>
     </div>
 
@@ -979,6 +1043,9 @@
         </div>
     </div>
 
+    <!-- Hidden file input for import -->
+    <input type="file" id="import-file-input" accept=".json" style="display: none;">
+
     <script>
         // DOM Elements
         const projectsGrid = document.getElementById('projects-grid');
@@ -991,6 +1058,10 @@
         const previewModal = document.getElementById('preview-modal');
         const closePreviewBtn = document.getElementById('close-preview');
         const searchInput = document.getElementById('search-input');
+        const exportBtn = document.getElementById('export-btn');
+        const importBtn = document.getElementById('import-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const importFileInput = document.getElementById('import-file-input');
         
         // Image upload elements
         const imageUploadArea = document.getElementById('image-upload-area');
@@ -1001,11 +1072,15 @@
         const modalImageContainer = document.getElementById('modal-image-container');
 
         // Variables
-        let projects = JSON.parse(localStorage.getItem('mes-projets-images')) || [];
+        let projects = [];
         let currentImageBase64 = null;
+
+        // LocalStorage key
+        const STORAGE_KEY = 'mes-projets-sauvegardes';
 
         // Initialize the app
         document.addEventListener('DOMContentLoaded', () => {
+            loadProjectsFromStorage();
             renderProjects();
             updateProjectsCount();
             
@@ -1072,11 +1147,79 @@
             // Remove image button
             removeImageBtn.addEventListener('click', resetImageUpload);
             
+            // Backup/restore buttons
+            exportBtn.addEventListener('click', exportProjects);
+            importBtn.addEventListener('click', () => {
+                importFileInput.click();
+            });
+            
+            importFileInput.addEventListener('change', importProjects);
+            
+            clearBtn.addEventListener('click', clearAllProjects);
+            
             // Add some sample projects if empty
             if (projects.length === 0) {
-                addSampleProjects();
+                // Don't add samples automatically, let user decide
             }
+            
+            // Check storage availability
+            checkStorageAvailability();
+            
+            // Auto-save reminder
+            showNotification('Vos projets sont automatiquement sauvegardés dans votre navigateur', 'success', 5000);
         });
+
+        // Load projects from localStorage
+        function loadProjectsFromStorage() {
+            try {
+                const savedProjects = localStorage.getItem(STORAGE_KEY);
+                if (savedProjects) {
+                    projects = JSON.parse(savedProjects);
+                    console.log(`${projects.length} projets chargés depuis le stockage local`);
+                } else {
+                    projects = [];
+                    console.log('Aucun projet sauvegardé trouvé');
+                }
+            } catch (error) {
+                console.error('Erreur lors du chargement des projets:', error);
+                projects = [];
+                showNotification('Erreur lors du chargement des projets sauvegardés', 'danger');
+            }
+        }
+
+        // Save projects to localStorage
+        function saveProjectsToStorage() {
+            try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
+                console.log(`${projects.length} projets sauvegardés dans le stockage local`);
+                
+                // Update last save time
+                const saveInfo = {
+                    lastSave: new Date().toISOString(),
+                    projectCount: projects.length
+                };
+                localStorage.setItem(`${STORAGE_KEY}_info`, JSON.stringify(saveInfo));
+                
+                return true;
+            } catch (error) {
+                console.error('Erreur lors de la sauvegarde des projets:', error);
+                showNotification('Erreur lors de la sauvegarde des projets', 'danger');
+                return false;
+            }
+        }
+
+        // Check storage availability
+        function checkStorageAvailability() {
+            try {
+                localStorage.setItem('test_storage', 'test');
+                localStorage.removeItem('test_storage');
+                return true;
+            } catch (e) {
+                console.error('LocalStorage n\'est pas disponible:', e);
+                showNotification('Attention: Le stockage local n\'est pas disponible. Vos projets ne seront pas sauvegardés.', 'warning', 10000);
+                return false;
+            }
+        }
 
         // Handle image upload
         function handleImageUpload() {
@@ -1149,6 +1292,7 @@
                     month: '2-digit',
                     year: 'numeric'
                 }),
+                timestamp: Date.now(),
                 // Store image as base64 if available
                 image: currentImageBase64
             };
@@ -1157,19 +1301,21 @@
             projects.unshift(newProject);
             
             // Save to localStorage
-            localStorage.setItem('mes-projets-images', JSON.stringify(projects));
+            const saved = saveProjectsToStorage();
             
-            // Reset form and close modal
-            projectForm.reset();
-            resetImageUpload();
-            formModal.classList.remove('active');
-            
-            // Update UI
-            renderProjects();
-            updateProjectsCount();
-            
-            // Show notification
-            showNotification('Projet ajouté avec succès !', 'success');
+            if (saved) {
+                // Reset form and close modal
+                projectForm.reset();
+                resetImageUpload();
+                formModal.classList.remove('active');
+                
+                // Update UI
+                renderProjects();
+                updateProjectsCount();
+                
+                // Show notification
+                showNotification('Projet ajouté et sauvegardé avec succès !', 'success');
+            }
         });
 
         // Function to render projects in 4x4 grid
@@ -1187,8 +1333,11 @@
             // Hide empty state
             emptyState.style.display = 'none';
             
+            // Sort projects by date (newest first)
+            const sortedProjects = [...filteredProjects].sort((a, b) => b.timestamp - a.timestamp);
+            
             // Create project cards
-            filteredProjects.forEach(project => {
+            sortedProjects.forEach(project => {
                 const projectCard = document.createElement('div');
                 projectCard.className = 'project-card';
                 projectCard.setAttribute('data-id', project.id);
@@ -1267,21 +1416,25 @@
             if (projectIndex !== -1) {
                 // Add deleting animation
                 const projectCard = document.querySelector(`[data-id="${id}"]`);
-                projectCard.classList.add('deleting');
+                if (projectCard) {
+                    projectCard.classList.add('deleting');
+                }
                 
                 // Remove from array after animation
                 setTimeout(() => {
                     projects.splice(projectIndex, 1);
                     
                     // Save to localStorage
-                    localStorage.setItem('mes-projets-images', JSON.stringify(projects));
+                    const saved = saveProjectsToStorage();
                     
-                    // Update UI
-                    renderProjects();
-                    updateProjectsCount();
-                    
-                    // Show notification
-                    showNotification('Projet supprimé avec succès !', 'danger');
+                    if (saved) {
+                        // Update UI
+                        renderProjects();
+                        updateProjectsCount();
+                        
+                        // Show notification
+                        showNotification('Projet supprimé avec succès !', 'danger');
+                    }
                 }, 500);
             }
         }
@@ -1290,6 +1443,7 @@
         function filterProjects(searchTerm) {
             if (!searchTerm) {
                 renderProjects();
+                updateProjectsCount();
                 return;
             }
             
@@ -1314,8 +1468,121 @@
             }, 300);
         }
 
+        // Function to export projects
+        function exportProjects() {
+            if (projects.length === 0) {
+                showNotification('Aucun projet à exporter', 'warning');
+                return;
+            }
+            
+            const dataStr = JSON.stringify(projects, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `mes-projets-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+            
+            showNotification(`${projects.length} projets exportés avec succès`, 'success');
+        }
+
+        // Function to import projects
+        function importProjects(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            
+            reader.onload = (e) => {
+                try {
+                    const importedProjects = JSON.parse(e.target.result);
+                    
+                    if (!Array.isArray(importedProjects)) {
+                        showNotification('Le fichier importé n\'est pas valide', 'danger');
+                        return;
+                    }
+                    
+                    // Validate each project has required fields
+                    const validProjects = importedProjects.filter(proj => 
+                        proj.name && proj.description && proj.link
+                    );
+                    
+                    if (validProjects.length === 0) {
+                        showNotification('Aucun projet valide trouvé dans le fichier', 'warning');
+                        return;
+                    }
+                    
+                    // Merge with existing projects (avoid duplicates by ID)
+                    const existingIds = projects.map(p => p.id);
+                    const newProjects = validProjects.filter(p => !existingIds.includes(p.id));
+                    
+                    // Assign new IDs if needed
+                    newProjects.forEach(proj => {
+                        if (!proj.id || existingIds.includes(proj.id)) {
+                            proj.id = Date.now() + Math.floor(Math.random() * 1000);
+                        }
+                        if (!proj.timestamp) {
+                            proj.timestamp = Date.now();
+                        }
+                        if (!proj.date) {
+                            proj.date = new Date().toLocaleDateString('fr-FR');
+                        }
+                    });
+                    
+                    projects.push(...newProjects);
+                    
+                    // Save to localStorage
+                    const saved = saveProjectsToStorage();
+                    
+                    if (saved) {
+                        // Update UI
+                        renderProjects();
+                        updateProjectsCount();
+                        
+                        // Show notification
+                        showNotification(`${newProjects.length} projets importés avec succès`, 'success');
+                    }
+                    
+                    // Reset file input
+                    importFileInput.value = '';
+                    
+                } catch (error) {
+                    console.error('Erreur lors de l\'importation:', error);
+                    showNotification('Erreur lors de l\'importation du fichier', 'danger');
+                }
+            };
+            
+            reader.readAsText(file);
+        }
+
+        // Function to clear all projects
+        function clearAllProjects() {
+            if (projects.length === 0) {
+                showNotification('Aucun projet à effacer', 'warning');
+                return;
+            }
+            
+            if (confirm(`Êtes-vous sûr de vouloir supprimer tous les ${projects.length} projets ? Cette action est irréversible.`)) {
+                projects = [];
+                
+                // Save to localStorage
+                const saved = saveProjectsToStorage();
+                
+                if (saved) {
+                    // Update UI
+                    renderProjects();
+                    updateProjectsCount();
+                    
+                    // Show notification
+                    showNotification('Tous les projets ont été effacés', 'danger');
+                }
+            }
+        }
+
         // Function to show notification
-        function showNotification(message, type) {
+        function showNotification(message, type, duration = 3000) {
             // Create notification element
             const notification = document.createElement('div');
             notification.className = 'notification';
@@ -1328,6 +1595,8 @@
                 notification.style.background = 'var(--danger)';
             } else if (type === 'warning') {
                 notification.style.background = 'var(--warning)';
+            } else if (type === 'info') {
+                notification.style.background = 'var(--primary)';
             }
             
             // Style the notification
@@ -1338,10 +1607,12 @@
             notification.style.color = 'white';
             notification.style.borderRadius = '10px';
             notification.style.boxShadow = '0 10px 25px rgba(0, 0, 0, 0.2)';
-            notification.style.zIndex = '1000';
+            notification.style.zIndex = '10000';
             notification.style.transform = 'translateY(100px)';
             notification.style.opacity = '0';
             notification.style.transition = 'all 0.5s ease';
+            notification.style.maxWidth = '400px';
+            notification.style.wordBreak = 'break-word';
             
             // Add to DOM
             document.body.appendChild(notification);
@@ -1352,7 +1623,7 @@
                 notification.style.opacity = '1';
             }, 10);
             
-            // Remove after 3 seconds
+            // Remove after duration
             setTimeout(() => {
                 notification.style.transform = 'translateY(100px)';
                 notification.style.opacity = '0';
@@ -1361,79 +1632,81 @@
                         notification.parentNode.removeChild(notification);
                     }
                 }, 500);
-            }, 3000);
+            }, duration);
         }
 
-        // Function to add sample projects
+        // Add sample projects function (optional)
         function addSampleProjects() {
+            if (projects.length > 0) {
+                if (!confirm('Voulez-vous ajouter des exemples de projets ? Vos projets existants seront conservés.')) {
+                    return;
+                }
+            }
+            
             const sampleProjects = [
                 {
-                    id: 1,
+                    id: Date.now() + 1,
                     name: "Portfolio créatif",
                     description: "Un portfolio interactif avec des animations CSS modernes et une interface utilisateur intuitive pour présenter mes travaux.",
                     link: "https://mon-portfolio.com",
                     category: "Web",
                     date: new Date().toLocaleDateString('fr-FR'),
-                    // Using placeholder image URL for sample
-                    image: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                    timestamp: Date.now() - 86400000 * 5,
+                    image: null
                 },
                 {
-                    id: 2,
+                    id: Date.now() + 2,
                     name: "Application de gestion de tâches",
                     description: "Application web avec fonctionnalités de drag & drop, notifications et synchronisation en temps réel.",
                     link: "https://mes-taches-app.com",
                     category: "Web",
                     date: new Date(Date.now() - 86400000).toLocaleDateString('fr-FR'),
-                    // Using placeholder image URL for sample
-                    image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                    timestamp: Date.now() - 86400000 * 3,
+                    image: null
                 },
                 {
-                    id: 3,
+                    id: Date.now() + 3,
                     name: "Application mobile de fitness",
                     description: "Application iOS et Android avec suivi d'activités, plans d'entraînement et intégration des wearables.",
                     link: "https://fitness-app.com",
                     category: "Mobile",
                     date: new Date(Date.now() - 172800000).toLocaleDateString('fr-FR'),
-                    image: null // No image for this sample
-                },
-                {
-                    id: 4,
-                    name: "Système de design UI",
-                    description: "Bibliothèque de composants React avec documentation complète et thèmes personnalisables.",
-                    link: "https://ui-system.com",
-                    category: "Design",
-                    date: new Date(Date.now() - 259200000).toLocaleDateString('fr-FR'),
-                    // Using placeholder image URL for sample
-                    image: "https://images.unsplash.com/photo-1561070791-2526d30994b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                },
-                {
-                    id: 5,
-                    name: "Plateforme e-commerce",
-                    description: "Site e-commerce complet avec panier, paiement sécurisé et gestion des stocks en temps réel.",
-                    link: "https://boutique-en-ligne.com",
-                    category: "Web",
-                    date: new Date(Date.now() - 345600000).toLocaleDateString('fr-FR'),
-                    // Using placeholder image URL for sample
-                    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
-                },
-                {
-                    id: 6,
-                    name: "Jeux vidéo éducatifs",
-                    description: "Collection de jeux éducatifs pour enfants avec interface colorée et animations engageantes.",
-                    link: "https://jeux-educatifs.com",
-                    category: "Logiciel",
-                    date: new Date(Date.now() - 432000000).toLocaleDateString('fr-FR'),
-                    // Using placeholder image URL for sample
-                    image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1000&q=80"
+                    timestamp: Date.now() - 86400000 * 7,
+                    image: null
                 }
             ];
             
-            // Only add sample projects if there are no projects at all
             projects.push(...sampleProjects);
-            localStorage.setItem('mes-projets-images', JSON.stringify(projects));
-            renderProjects();
-            updateProjectsCount();
+            
+            // Save to localStorage
+            const saved = saveProjectsToStorage();
+            
+            if (saved) {
+                // Update UI
+                renderProjects();
+                updateProjectsCount();
+                
+                // Show notification
+                showNotification('Exemples de projets ajoutés avec succès !', 'success');
+            }
         }
+
+        // Expose addSampleProjects to global scope for testing
+        window.addSampleProjects = addSampleProjects;
+        
+        // Auto-save check on page unload
+        window.addEventListener('beforeunload', () => {
+            // Force a final save
+            saveProjectsToStorage();
+        });
+        
+        // Periodically save (every 30 seconds) in case of crashes
+        setInterval(() => {
+            if (projects.length > 0) {
+                saveProjectsToStorage();
+                console.log('Sauvegarde automatique effectuée');
+            }
+        }, 30000);
     </script>
 </body>
 </html>
